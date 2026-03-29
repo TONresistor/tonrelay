@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"text/template"
 
 	"github.com/TONresistor/tonrelay/internal/config"
@@ -60,6 +61,9 @@ func validatePath(p string) error {
 		if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '/' || c == '-' || c == '_' || c == '.') {
 			return fmt.Errorf("invalid character %q in path %q", string(c), p)
 		}
+	}
+	if strings.Contains(p, "..") {
+		return fmt.Errorf("path %q contains directory traversal", p)
 	}
 	return nil
 }
@@ -197,10 +201,23 @@ func downloadBinary(version, binaryPath, dataDir string) (string, error) {
 		return "", err
 	}
 
+	checksums, err := gh.DownloadChecksums(release)
+	if err != nil {
+		fmt.Printf("Warning: could not download checksums.txt: %v\n", err)
+	}
+
 	fmt.Printf("Downloading %s (%s)...\n", assetName, release.TagName)
 	checksum, err := gh.DownloadAsset(asset, binaryPath)
 	if err != nil {
 		return "", err
+	}
+
+	if expected, ok := checksums[assetName]; ok {
+		if checksum != expected {
+			os.Remove(binaryPath)
+			return "", fmt.Errorf("checksum mismatch: expected %s, got %s", expected, checksum)
+		}
+		fmt.Println("Checksum verified against upstream checksums.txt")
 	}
 
 	checksumPath := filepath.Join(dataDir, "tunnel-node.sha256")

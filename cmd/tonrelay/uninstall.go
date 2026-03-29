@@ -88,7 +88,12 @@ var uninstallCmd = &cobra.Command{
 
 		// Remove data
 		if !keepData {
-			if err := os.RemoveAll(dataDir); err != nil {
+			cleanDir := filepath.Clean(dataDir)
+			parts := strings.Split(cleanDir, "/")
+			if len(parts) < 4 {
+				return fmt.Errorf("refusing to remove data directory %q: path too short, looks dangerous", dataDir)
+			}
+			if err := os.RemoveAll(cleanDir); err != nil {
 				fmt.Printf("Warning: failed to remove data dir: %v\n", err)
 			}
 		}

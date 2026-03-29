@@ -55,7 +55,11 @@ func Update(version, binaryPath, dataDir string) error {
 		return err
 	}
 
-	// Stop service
+	checksums, err := gh.DownloadChecksums(release)
+	if err != nil {
+		fmt.Printf("Warning: could not download checksums.txt: %v\n", err)
+	}
+
 	wasRunning := service.IsActive()
 	if wasRunning {
 		fmt.Println("Stopping service...")
@@ -64,7 +68,6 @@ func Update(version, binaryPath, dataDir string) error {
 		}
 	}
 
-	// Backup old binary
 	backupPath := filepath.Join(dataDir, "tunnel-node.bak")
 	if _, err := os.Stat(binaryPath); err == nil {
 		fmt.Println("Backing up current binary...")
@@ -73,43 +76,67 @@ func Update(version, binaryPath, dataDir string) error {
 		}
 	}
 
-	// Download new binary
+	checksumPath := filepath.Join(dataDir, "tunnel-node.sha256")
+	versionPath := filepath.Join(dataDir, "version")
+	oldChecksum, _ := os.ReadFile(checksumPath)
+	oldVersion, _ := os.ReadFile(versionPath)
+
+	rollback := func() {
+		if _, err := os.Stat(backupPath); err == nil {
+			os.Rename(backupPath, binaryPath)
+		}
+		if oldChecksum != nil {
+			os.WriteFile(checksumPath, oldChecksum, 0600)
+		}
+		if oldVersion != nil {
+			os.WriteFile(versionPath, oldVersion, 0644)
+		}
+		if wasRunning {
+			service.Start()
+		}
+	}
+
 	fmt.Printf("Downloading %s (%s)...\n", assetName, release.TagName)
 	checksum, err := gh.DownloadAsset(asset, binaryPath)
 	if err != nil {
-		// Restore backup on failure
-		if _, berr := os.Stat(backupPath); berr == nil {
-			os.Rename(backupPath, binaryPath)
-		}
+		rollback()
 		return fmt.Errorf("download failed: %w", err)
 	}
 
-	// Store checksum and version
-	checksumPath := filepath.Join(dataDir, "tunnel-node.sha256")
+	if expected, ok := checksums[assetName]; ok {
+		if checksum != expected {
+			rollback()
+			return fmt.Errorf("checksum mismatch: expected %s, got %s", expected, checksum)
+		}
+		fmt.Println("Checksum verified against upstream checksums.txt")
+	}
+
 	if err := os.WriteFile(checksumPath, []byte(checksum), 0600); err != nil {
+		rollback()
 		return fmt.Errorf("failed to write checksum: %w", err)
 	}
 
-	versionPath := filepath.Join(dataDir, "version")
 	if err := os.WriteFile(versionPath, []byte(release.TagName+"\n"), 0644); err != nil {
+		rollback()
 		return fmt.Errorf("failed to write version: %w", err)
 	}
 
 	fmt.Printf("Updated to %s (SHA256: %s)\n", release.TagName, checksum[:16]+"...")
 
-	// Verify downloaded binary matches stored checksum
-	ok, err := VerifyBinary(binaryPath, dataDir)
-	if err != nil {
-		return fmt.Errorf("binary verification failed: %w", err)
+	ok, verr := VerifyBinary(binaryPath, dataDir)
+	if verr != nil {
+		rollback()
+		return fmt.Errorf("binary verification failed: %w", verr)
 	}
 	if !ok {
+		rollback()
 		return fmt.Errorf("binary checksum mismatch after download")
 	}
 
-	// Restart service if it was running
 	if wasRunning {
 		fmt.Println("Starting service...")
 		if err := service.Start(); err != nil {
+			rollback()
 			return fmt.Errorf("failed to start service: %w", err)
 		}
 		fmt.Println("Service started.")

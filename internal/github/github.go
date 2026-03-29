@@ -1,6 +1,7 @@
 package github
 
 import (
+	"bufio"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -8,7 +9,9 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -92,6 +95,37 @@ func (r *Release) FindAsset(name string) (*Asset, error) {
 	return nil, fmt.Errorf("asset %q not found in release %s", name, r.TagName)
 }
 
+func (c *Client) DownloadChecksums(release *Release) (map[string]string, error) {
+	asset, err := release.FindAsset("checksums.txt")
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.httpClient.Get(asset.BrowserDownloadURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to download checksums: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("checksums download returned status %d", resp.StatusCode)
+	}
+
+	checksums := make(map[string]string)
+	scanner := bufio.NewScanner(resp.Body)
+	for scanner.Scan() {
+		fields := strings.Fields(scanner.Text())
+		if len(fields) == 2 {
+			checksums[fields[1]] = fields[0]
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("failed to parse checksums: %w", err)
+	}
+
+	return checksums, nil
+}
+
 func (c *Client) DownloadAsset(asset *Asset, destPath string) (string, error) {
 	resp, err := c.httpClient.Get(asset.BrowserDownloadURL)
 	if err != nil {
@@ -103,11 +137,10 @@ func (c *Client) DownloadAsset(asset *Asset, destPath string) (string, error) {
 		return "", fmt.Errorf("download returned status %d", resp.StatusCode)
 	}
 
-	f, err := os.CreateTemp("", "tunnel-node-*")
+	f, err := os.CreateTemp(filepath.Dir(destPath), ".tunnel-node-download-*")
 	if err != nil {
 		return "", fmt.Errorf("failed to create temp file: %w", err)
 	}
-	defer f.Close()
 
 	hasher := sha256.New()
 	writer := io.MultiWriter(f, hasher)
