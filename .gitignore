@@ -1,0 +1,7 @@
+tonrelay
+tonrelay-linux
+*.exe
+specs/tonrelay/tested.md
+.obsidian/
+specs/
+dist/
