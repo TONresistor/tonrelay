@@ -9,6 +9,8 @@ require (
 	github.com/ton-blockchain/adnl-tunnel v0.1.8
 )
 
+replace github.com/ton-blockchain/adnl-tunnel => github.com/TONresistor/adnl-tunnel v0.2.0-clearnet
+
 require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/charmbracelet/colorprofile v0.4.1 // indirect
@@ -33,7 +35,7 @@ require (
 	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/xssnick/ton-payment-network v1.2.3 // indirect
-	github.com/xssnick/tonutils-go v1.15.3 // indirect
+	github.com/xssnick/tonutils-go v1.15.5 // indirect
 	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
 )

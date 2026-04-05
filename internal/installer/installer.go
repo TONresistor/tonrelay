@@ -16,13 +16,14 @@ import (
 )
 
 type Options struct {
-	ExternalIP string
-	Port       uint16
-	Version    string
-	ConfigPath string
-	DataDir    string
-	BinaryPath string
-	User       string
+	ExternalIP   string
+	Port         uint16
+	Version      string
+	ConfigPath   string
+	DataDir      string
+	BinaryPath   string
+	User         string
+	ClearnetExit bool
 }
 
 const systemdUnitTemplate = `[Unit]
@@ -34,7 +35,7 @@ Wants=network-online.target
 Type=simple
 User={{.User}}
 Group={{.User}}
-ExecStart=/bin/sh -c 'sleep infinity | exec {{.BinaryPath}} -config {{.ConfigPath}} -v 3 -log-disable-file -metrics-listen-addr 127.0.0.1:9091'
+ExecStart=/bin/sh -c 'sleep infinity | exec {{.BinaryPath}} -config {{.ConfigPath}} -v 3 -log-disable-file -metrics-listen-addr 127.0.0.1:9091{{if .ClearnetExit}} -clearnet-exit{{end}}'
 WorkingDirectory={{.DataDir}}
 Restart=always
 RestartSec=5
@@ -104,7 +105,7 @@ func Install(opts Options) error {
 
 	checkPort(opts.Port)
 
-	if err := generateConfig(opts.ConfigPath, externalIP, opts.Port, opts.DataDir); err != nil {
+	if err := generateConfig(opts.ConfigPath, externalIP, opts.Port, opts.DataDir, opts.ClearnetExit); err != nil {
 		return fmt.Errorf("generate config: %w", err)
 	}
 
@@ -229,7 +230,7 @@ func downloadBinary(version, binaryPath, dataDir string) (string, error) {
 	return release.TagName, nil
 }
 
-func generateConfig(configPath, externalIP string, port uint16, dataDir string) error {
+func generateConfig(configPath, externalIP string, port uint16, dataDir string, clearnetExit bool) error {
 	if _, err := os.Stat(configPath); err == nil {
 		fmt.Printf("Config already exists at %s, skipping generation\n", configPath)
 		return nil
@@ -239,6 +240,12 @@ func generateConfig(configPath, externalIP string, port uint16, dataDir string) 
 	cfg, err := config.GenerateDefault(externalIP, port, dataDir)
 	if err != nil {
 		return err
+	}
+
+	if clearnetExit {
+		cfg.AllowClearnetExit = true
+		cfg.ClearnetExitPorts = []int{443}
+		cfg.MaxTCPConnsPerSection = 64
 	}
 
 	if err := config.Validate(cfg); err != nil {

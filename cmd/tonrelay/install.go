@@ -22,15 +22,17 @@ var installCmd = &cobra.Command{
 		ip, _ := cmd.Flags().GetString("ip")
 		port, _ := cmd.Flags().GetUint16("port")
 		version, _ := cmd.Flags().GetString("version")
+		clearnetExit, _ := cmd.Flags().GetBool("clearnet-exit")
 
 		opts := installer.Options{
-			ExternalIP: ip,
-			Port:       port,
-			Version:    version,
-			ConfigPath: cfgPath,
-			DataDir:    dataDir,
-			BinaryPath: BinaryPath,
-			User:       SystemUser,
+			ExternalIP:   ip,
+			Port:         port,
+			Version:      version,
+			ConfigPath:   cfgPath,
+			DataDir:      dataDir,
+			BinaryPath:   BinaryPath,
+			User:         SystemUser,
+			ClearnetExit: clearnetExit,
 		}
 
 		if err := installer.Install(opts); err != nil {
@@ -63,9 +65,12 @@ func printSummary() {
 		fmt.Printf("  IP:      %s\n", c.ExternalIP)
 		fmt.Printf("  Port:    %s\n", extractPort(c.TunnelListenAddr))
 		fmt.Printf("  ADNL ID: %s\n", truncateID(config.GetADNLID(c)))
+		if c.AllowClearnetExit {
+			fmt.Println("  Mode:    free + clearnet exit")
+		} else {
+			fmt.Println("  Mode:    free")
+		}
 	}
-
-	fmt.Println("  Mode:    free")
 	fmt.Println("────────────────────────────────────")
 	fmt.Println()
 	fmt.Println("Your relay will appear in the network within ~5 minutes.")
@@ -95,5 +100,6 @@ func init() {
 	installCmd.Flags().String("ip", "", "external IP (auto-detected if not set)")
 	installCmd.Flags().Uint16("port", 17330, "UDP listen port")
 	installCmd.Flags().String("version", "", "tunnel-node version (default: latest)")
+	installCmd.Flags().Bool("clearnet-exit", false, "Enable clearnet TCP exit mode (dual: relay + exit)")
 	rootCmd.AddCommand(installCmd)
 }

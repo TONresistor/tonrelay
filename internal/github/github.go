@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	repoOwner = "ton-blockchain"
+	repoOwner = "TONresistor"
 	repoName  = "adnl-tunnel"
 	apiBase   = "https://api.github.com/repos/" + repoOwner + "/" + repoName
 )
