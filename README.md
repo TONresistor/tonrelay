@@ -4,6 +4,16 @@ CLI for TON tunnel relay operators. One-command install, service management, liv
 
 Built on [adnl-tunnel](https://github.com/TONresistor/adnl-tunnel).
 
+## Quick start
+
+```bash
+curl -sSL https://raw.githubusercontent.com/TONresistor/tonrelay/main/scripts/install.sh | sudo sh
+sudo tonrelay install
+sudo tonrelay status --live
+```
+
+This installs the CLI, downloads tunnel-node, generates keys, creates a systemd service, and starts the relay automatically. The last command opens the live dashboard to verify everything is running. Open UDP port 17330 on your firewall.
+
 ## Install
 
 ```bash
@@ -11,10 +21,13 @@ curl -sSL https://raw.githubusercontent.com/TONresistor/tonrelay/main/scripts/in
 sudo tonrelay install
 ```
 
-Enable clearnet exit:
+Options:
 
-```bash
-sudo tonrelay install --clearnet-exit
+```
+--clearnet-exit    Enable clearnet HTTPS exit mode (dual: relay + exit)
+--ip <IP>          Set external IP (auto-detected if omitted)
+--port <PORT>      Set UDP listen port (default: 17330)
+--version <TAG>    Pin tunnel-node version (default: latest)
 ```
 
 Build from source:
@@ -33,7 +46,7 @@ sudo tonrelay install
 
 The node continues relaying ADNL for .ton users. Existing clients are not affected.
 
-Security:
+Security (enforced by tunnel-node):
 - HTTPS only (port 443), cleartext HTTP blocked
 - DNS resolved at exit node, no client DNS leaks
 - IP blacklist: RFC-1918, loopback, link-local, CGN, cloud metadata
@@ -44,20 +57,31 @@ Security:
 
 ```bash
 tonrelay status              # quick status check
-tonrelay status --live       # interactive dashboard
+tonrelay status --live       # interactive TUI dashboard
+tonrelay info                # ADNL ID, IP, port, mode
+tonrelay share               # shareable relay config (JSON)
 tonrelay logs -f             # follow relay logs
-tonrelay info                # show ADNL ID, IP, port
-tonrelay share               # shareable relay info
 tonrelay config show         # display config (keys masked)
-tonrelay config set-ip       # update external IP
+tonrelay config set-ip <IP>  # update external IP
+tonrelay version             # tonrelay and tunnel-node versions
 ```
 
 ```bash
 sudo tonrelay start
 sudo tonrelay stop
 sudo tonrelay restart
-sudo tonrelay update         # download latest binary, restart
-sudo tonrelay uninstall      # stop service, remove everything
+sudo tonrelay update                  # download latest binary, restart
+sudo tonrelay uninstall               # stop service, remove everything
+sudo tonrelay uninstall --keep-config # preserve config on removal
+```
+
+Global flags:
+
+```
+--config <PATH>    Config file path (default: /etc/tonrelay/config.json)
+--data-dir <PATH>  Data directory (default: /var/lib/tonrelay/)
+--no-color         Disable colored output
+--json             JSON output (status, info)
 ```
 
 ## Layout
