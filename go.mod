@@ -9,7 +9,7 @@ require (
 	github.com/ton-blockchain/adnl-tunnel v0.1.8
 )
 
-replace github.com/ton-blockchain/adnl-tunnel => github.com/TONresistor/adnl-tunnel v0.2.0-clearnet
+replace github.com/ton-blockchain/adnl-tunnel => github.com/TONresistor/adnl-tunnel v0.2.0-clearnet.0.20260410002843-1665e9450e9c
 
 require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect

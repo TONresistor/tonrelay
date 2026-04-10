@@ -1,5 +1,5 @@
-github.com/TONresistor/adnl-tunnel v0.2.0-clearnet h1:wlO9N5aELiprY5pJbAtmitxd0SVY9lb5sFFNLwMmTSk=
-github.com/TONresistor/adnl-tunnel v0.2.0-clearnet/go.mod h1:MEjflDXTBgEB5b1YrcCaRFmXmraCy5xxytw79rwkj/4=
+github.com/TONresistor/adnl-tunnel v0.2.0-clearnet.0.20260410002843-1665e9450e9c h1:XlJzVjuLcWkwxOq0ls+D+FYWE+u/oInx8ZQzvyFZJ6U=
+github.com/TONresistor/adnl-tunnel v0.2.0-clearnet.0.20260410002843-1665e9450e9c/go.mod h1:MEjflDXTBgEB5b1YrcCaRFmXmraCy5xxytw79rwkj/4=
 github.com/aymanbagabas/go-osc52/v2 v2.0.1 h1:HwpRHbFMcZLEVr42D4p7XBqjyuxQH5SMiErDT4WkJ2k=
 github.com/aymanbagabas/go-osc52/v2 v2.0.1/go.mod h1:uYgXzlJ7ZpABp8OJ+exZzJJhRNQ2ASbcXHWsFqH8hp8=
 github.com/charmbracelet/bubbletea v1.3.10 h1:otUDHWMMzQSB0Pkc87rm691KZ3SWa4KUlvF9nRvCICw=
